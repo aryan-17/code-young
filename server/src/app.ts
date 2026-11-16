@@ -5,7 +5,11 @@ import { createDb } from './db/index.js';
 import { SqliteMentorRepository } from './repositories/mentor.repository.js';
 import { SqliteBookingRepository } from './repositories/booking.repository.js';
 import { SqliteNotificationRepository } from './repositories/notification.repository.js';
+import { LeastLoadedStrategy } from './strategies/least-loaded.js';
+import { ConsoleNotifier } from './notifiers/console.notifier.js';
+import { SystemClock } from './lib/clock.js';
 import { loadConfig } from './config.js';
+import { registerRoutes } from './routes/index.js';
 
 export interface BuildAppOptions {
   deps?: Partial<AppDependencies>;
@@ -19,25 +23,35 @@ export interface BuildAppOptions {
  * Production wiring happens in index.ts; tests pass FixedClock, mocks, etc.
  */
 export function buildApp(options: BuildAppOptions = {}) {
-  const { deps = {} } = options;
+  const overrides = options.deps ?? {};
+  const config = overrides.config ?? loadConfig();
   const app = Fastify({ logger: false });
 
-  // Wire default repositories from DB if not overridden
-  if (!deps.mentorRepo || !deps.bookingRepo || !deps.notificationRepo) {
-    const config = loadConfig();
-    const db = createDb(options.dbPath ?? config.DATABASE_PATH);
-    deps.mentorRepo = deps.mentorRepo ?? new SqliteMentorRepository(db);
-    deps.bookingRepo = deps.bookingRepo ?? new SqliteBookingRepository(db);
-    deps.notificationRepo = deps.notificationRepo ?? new SqliteNotificationRepository(db);
-  }
+  // Wire DB
+  const db = overrides.db ?? createDb(options.dbPath ?? config.DATABASE_PATH);
 
-  // Store deps on app instance for route access
+  // Compose all dependencies with defaults
+  const deps: AppDependencies = {
+    db,
+    config,
+    clock: overrides.clock ?? new SystemClock(),
+    strategy: overrides.strategy ?? new LeastLoadedStrategy(),
+    notifier: overrides.notifier ?? new ConsoleNotifier(),
+    mentorRepo: overrides.mentorRepo ?? new SqliteMentorRepository(db),
+    bookingRepo: overrides.bookingRepo ?? new SqliteBookingRepository(db),
+    notificationRepo: overrides.notificationRepo ?? new SqliteNotificationRepository(db),
+  };
+
+  // Store deps on app instance
   app.decorate('deps', deps);
 
   // Health check (DESIGN.md §8)
   app.get('/api/health', async () => {
     return { status: 'ok' };
   });
+
+  // Register all routes
+  registerRoutes(app, deps);
 
   // Global error handler — maps AppError to standard envelope (DESIGN.md §8)
   app.setErrorHandler((error, _request, reply) => {

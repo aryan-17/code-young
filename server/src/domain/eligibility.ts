@@ -36,6 +36,8 @@ export function eligibleMentors(
   slotMinutes: number,
 ): EligibleMentor[] {
   const slotStart = DateTime.fromISO(slotStartUtc, { zone: 'utc' });
+  // Normalize to match expandMentorSlots output format (always .000Z)
+  const normalizedStartUtc = slotStart.toISO()!;
 
   const result: EligibleMentor[] = [];
 
@@ -44,18 +46,17 @@ export function eligibleMentors(
     // Expand mentor's rules for the relevant date range to find if this UTC slot is covered
     const mentorSlots = expandMentorSlots(
       mentor.rules, mentor.timezone,
-      // Expand a window around the slot date — mentor-local date could differ
-      DateTime.fromISO(slotStartUtc, { zone: 'utc' }).setZone(mentor.timezone).minus({ days: 1 }).toISODate()!,
-      DateTime.fromISO(slotStartUtc, { zone: 'utc' }).setZone(mentor.timezone).plus({ days: 1 }).toISODate()!,
+      slotStart.setZone(mentor.timezone).minus({ days: 1 }).toISODate()!,
+      slotStart.setZone(mentor.timezone).plus({ days: 1 }).toISODate()!,
       slotMinutes,
     );
 
-    const coversSlot = mentorSlots.some(s => s.startUtc === slotStartUtc);
+    const coversSlot = mentorSlots.some(s => s.startUtc === normalizedStartUtc);
     if (!coversSlot) continue;
 
     // Check 2: No confirmed booking overlapping this slot
     const mentorBookings = bookings.filter(b => b.mentorId === mentor.id);
-    const hasOverlap = mentorBookings.some(b => b.startUtc === slotStartUtc);
+    const hasOverlap = mentorBookings.some(b => b.startUtc === normalizedStartUtc || b.startUtc === slotStartUtc);
     if (hasOverlap) continue;
 
     // Check 3: Capacity — bookings on this mentor-local date < maxPerDay
