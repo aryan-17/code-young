@@ -20,7 +20,7 @@ function renderApp(route = '/') {
 describe('App', () => {
   it('renders booking page at /', () => {
     renderApp('/');
-    expect(screen.getByText(/booking flow/i)).toBeInTheDocument();
+    expect(screen.getByText(/book a trial class/i)).toBeInTheDocument();
   });
 
   it('renders mentor page at /mentor', () => {

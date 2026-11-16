@@ -1,23 +1,17 @@
 import { Routes, Route } from 'react-router-dom';
-
-function BookingPage() {
-  return <div>Booking flow — M5</div>;
-}
-
-function ConfirmationPage() {
-  return <div>Booking confirmation — M5</div>;
-}
+import { BookingPage } from './pages/BookingPage';
+import { ConfirmationPage } from './pages/ConfirmationPage';
 
 function ManageBookingPage() {
-  return <div>Manage booking — M6</div>;
+  return <div className="min-h-screen bg-gray-50 p-8 text-center">Manage booking — M6</div>;
 }
 
 function MentorPage() {
-  return <div>Mentor view — M6</div>;
+  return <div className="min-h-screen bg-gray-50 p-8 text-center">Mentor view — M6</div>;
 }
 
 function OutboxPage() {
-  return <div>Notification outbox — M6</div>;
+  return <div className="min-h-screen bg-gray-50 p-8 text-center">Notification outbox — M6</div>;
 }
 
 export default function App() {
