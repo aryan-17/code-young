@@ -371,3 +371,34 @@ function buildAllAvailableSlots(
     return { startUtc, available };
   });
 }
+
+/**
+ * Generate an .ics calendar file for a booking (DESIGN.md §2.2 — should).
+ */
+export function generateIcs(token: string, deps: AppDependencies): string {
+  const booking = deps.bookingRepo.findByToken(token);
+  if (!booking) {
+    throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
+  }
+
+  const start = DateTime.fromISO(booking.start_utc, { zone: 'utc' });
+  const end = DateTime.fromISO(booking.end_utc, { zone: 'utc' });
+
+  const fmtIcs = (dt: DateTime) => dt.toFormat("yyyyMMdd'T'HHmmss'Z'");
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Codeyoung//Trial Class//EN',
+    'BEGIN:VEVENT',
+    `DTSTART:${fmtIcs(start)}`,
+    `DTEND:${fmtIcs(end)}`,
+    `SUMMARY:Codeyoung Trial Class — ${booking.child_name}`,
+    `DESCRIPTION:Mentor: ${booking.mentor.name}\\nClass link: ${booking.class_link}`,
+    `URL:${booking.class_link}`,
+    `UID:${booking.token}@codeyoung-demo.com`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+}

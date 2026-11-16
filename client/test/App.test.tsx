@@ -27,4 +27,9 @@ describe('App', () => {
     renderApp('/mentor');
     expect(screen.getByText(/mentor view/i)).toBeInTheDocument();
   });
+
+  it('renders outbox page at /outbox', () => {
+    renderApp('/outbox');
+    expect(screen.getByText(/notification outbox/i)).toBeInTheDocument();
+  });
 });

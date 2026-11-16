@@ -63,4 +63,32 @@ export async function cancelBooking(token: string): Promise<{ status: string }> 
   return request<{ status: string }>(`/bookings/${token}/cancel`, { method: 'POST' });
 }
 
+export async function fetchMentors(): Promise<Array<{ id: number; name: string }>> {
+  return request('/mentors');
+}
+
+export async function fetchMentorBookings(mentorId: number): Promise<Array<{
+  id: number; startUtc: string; mentorLocalTime: string; mentorLocalDate: string;
+  mentorZoneLabel: string; mentorZoneAbbr: string; parentName: string; childName: string;
+  parentLocalTime: string; classLink: string; dayCount: string;
+}>> {
+  return request(`/mentors/${mentorId}/bookings`);
+}
+
+export interface NotificationItem {
+  id: number;
+  booking_id: number;
+  recipient_type: 'parent' | 'mentor';
+  recipient_email: string;
+  timezone: string;
+  kind: 'booking_confirmed' | 'booking_cancelled';
+  subject: string;
+  body: string;
+  created_at: string;
+}
+
+export async function fetchNotifications(): Promise<NotificationItem[]> {
+  return request('/notifications');
+}
+
 export { ApiClientError };
