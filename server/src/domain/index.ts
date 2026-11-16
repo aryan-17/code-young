@@ -1,2 +1,4 @@
-// Pure domain logic — slot expansion, eligibility, capacity, alternatives added in M3
-export {};
+export { expandMentorSlots } from './slots.js';
+export type { ExpandedSlot } from './slots.js';
+export { eligibleMentors, isSlotAvailable } from './eligibility.js';
+export { findAlternatives } from './alternatives.js';
