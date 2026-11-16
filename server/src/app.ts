@@ -1,6 +1,16 @@
 import Fastify from 'fastify';
 import type { AppDependencies } from './lib/types.js';
 import { AppError } from './lib/errors.js';
+import { createDb } from './db/index.js';
+import { SqliteMentorRepository } from './repositories/mentor.repository.js';
+import { SqliteBookingRepository } from './repositories/booking.repository.js';
+import { SqliteNotificationRepository } from './repositories/notification.repository.js';
+import { loadConfig } from './config.js';
+
+export interface BuildAppOptions {
+  deps?: Partial<AppDependencies>;
+  dbPath?: string;
+}
 
 /**
  * Fastify app factory — Composition Root (DESIGN.md §3.3).
@@ -8,8 +18,18 @@ import { AppError } from './lib/errors.js';
  * Accepts dependency overrides for testing (Dependency Inversion).
  * Production wiring happens in index.ts; tests pass FixedClock, mocks, etc.
  */
-export function buildApp(deps: Partial<AppDependencies> = {}) {
+export function buildApp(options: BuildAppOptions = {}) {
+  const { deps = {} } = options;
   const app = Fastify({ logger: false });
+
+  // Wire default repositories from DB if not overridden
+  if (!deps.mentorRepo || !deps.bookingRepo || !deps.notificationRepo) {
+    const config = loadConfig();
+    const db = createDb(options.dbPath ?? config.DATABASE_PATH);
+    deps.mentorRepo = deps.mentorRepo ?? new SqliteMentorRepository(db);
+    deps.bookingRepo = deps.bookingRepo ?? new SqliteBookingRepository(db);
+    deps.notificationRepo = deps.notificationRepo ?? new SqliteNotificationRepository(db);
+  }
 
   // Store deps on app instance for route access
   app.decorate('deps', deps);
